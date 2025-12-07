@@ -17,7 +17,7 @@ Na slici 1 prikazan je osnovni tok ARP komunikacije, onaj koji se dešava kada r
 
 <div align="center">
   <img src="Graficki_prikaz_scenarija/scenario1.png" alt="Scenario1" title="Scenario1">
-  <p><b>Slika 1:</b> Grafički prikaz validne rezolucije</p>
+  <p><b>Slika 1:</b> Grafički prikaz uspješne rezolucije</p>
 </div>
 
 Ovaj scenario je bitan jer pokazuje osnovnu funkcionalnost ARP protokola: kako se IP adrese mapiraju na fizičke MAC adrese i kako se omogućava komunikacija unutar lokalne mreže. Bez ovakve uspješne razmjene, hostovi ne bi mogli slati pakete jedni drugima.
@@ -29,7 +29,7 @@ Slika 2 prikazuje scenario u kojem se opisuje šta se dešava kada se traži IP 
 
 <div align="center">
   <img src="Graficki_prikaz_scenarija/scenario2.png" alt="Scenario2" title="Scenario2">
-  <p><b>Slika 2:</b> Grafički prikaz nevalidne rezolucije</p>
+  <p><b>Slika 2:</b> Grafički prikaz neuspješne rezolucije</p>
 </div>
 
 Ovaj scenario je važan jer pokazuje kako sistem reaguje na nepostojeće adrese: umjesto da se beskonačno čeka, uvodi se mehanizam timeout-a koji osigurava da se proces završi i da se zna da rezolucija nije uspjela. To je ključno za stabilnost mreže i za sprječavanje blokiranja komunikacije.
