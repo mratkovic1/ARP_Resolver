@@ -47,6 +47,30 @@ Ovaj scenario pokazuje kako se sistem ponaša u slučaju paralelnih zahtjeva i o
 
 ## Opis ulaznih i izlaznih signala modula
 
+U nastavku su prikazani signali entiteta `arp_resolver` zajedno sa njihovim tipovima i opisima. 
+
+| Tip signala | Naziv signala | Opis |
+|-------------|---------------|------|
+| Ulaz | `clock : STD_LOGIC` | Standardni sinhroni clock. |
+| Ulaz | `reset : STD_LOGIC` | Reset signal. Kada je aktivan, briše interno stanje, vraća FSM u početno stanje i gasi `busy` i `done`. |
+| Ulaz | `resolve : STD_LOGIC` | Signal za pokretanje rezolucije. Kada je aktivan u stanju mirovanja, resolver započinje ARP rezoluciju za zadatu IP adresu. |
+| Ulaz | `ip_address : STD_LOGIC_VECTOR(31 DOWNTO 0)` | IPv4 adresa koja se traži u mreži. Koristi se za formiranje ARP Request paketa. |
+| Izlaz | `done : STD_LOGIC` | Signal završetka. Postaje aktivan kada se rezolucija završi – bilo uspješno ili neuspješno (timeout). |
+| Izlaz | `mac_address : STD_LOGIC` | Rezultujuća MAC adresa. Postaje validna kada se primi ispravan ARP Reply. |
+| Izlaz | `busy : STD_LOGIC` | Pokazatelj aktivnosti. Aktiviran dok je rezolucija u toku. Sprečava pokretanje novih zahtjeva dok prethodni nije završen. |
+| Ulaz | `in_data : STD_LOGIC_VECTOR(7 DOWNTO 0)` | Dolazni bajtovi iz RX interfejsa. Prenose Ethernet okvire (uključujući ARP Reply). |
+| Ulaz | `in_valid : STD_LOGIC` | Označava da je trenutni bajt na `in_data` validan. Koristi se zajedno sa `in_ready` za handshake. |
+| Ulaz | `in_sop : STD_LOGIC` | Start‑of‑packet signal. Označava početak dolaznog Ethernet okvira. |
+| Ulaz | `in_eop : STD_LOGIC` | End‑of‑packet signal. Označava kraj dolaznog Ethernet okvira. |
+| Izlaz | `in_ready : STD_LOGIC` | Pokazatelj spremnosti resolvera da primi nove bajtove. Ako je nizak, izvor mora čekati. |
+| Izlaz | `out_data : STD_LOGIC_VECTOR(7 DOWNTO 0)` | Odlazni bajtovi prema TX interfejsu. Prenose formirani ARP Request okvir. |
+| Izlaz | `out_valid : STD_LOGIC` | Označava da je trenutni bajt na `out_data` validan i može biti prihvaćen ako je `out_ready=1`. |
+| Izlaz | `out_sop : STD_LOGIC` | Start‑of‑packet signal za odlazni ARP Request. Označava početak paketa. |
+| Izlaz | `out_eop : STD_LOGIC` | End‑of‑packet signal za odlazni ARP Request. Označava kraj paketa. |
+| Ulaz | `out_ready : STD_LOGIC` | Pokazatelj spremnosti prijemnika da prihvati bajtove. Resolver šalje podatke samo kada su `out_valid=1` i `out_ready=1`. |
+
+
+
 ## Dizajn konačnog automata - FSM dijagram
 
 ## Modeliranje sklopa u VHDL-u i sinteza u Intel Quartus Prime
