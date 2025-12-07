@@ -14,6 +14,12 @@ U nastavku su prikazani osnovni scenariji rada ARP resolvera. Njihova svrha je d
 
 ### Scenario 1 - Uspješna rezolucija
 Na slici 1 prikazan je osnovni tok ARP komunikacije, onaj koji se dešava kada rezolucija IP adrese završi uspješno. HOST1 pokreće proces tako što šalje ARP Request u obliku broadcast poruke: “Ko ima IP adresu 192.168.10.4?”. Ova poruka se prenosi kroz LAN i svi hostovi je primaju, ali samo HOST4 prepoznaje da se traži njegova adresa. On zatim odgovara direktno HOST1 u putem ARP Reply poruke, koja je unicast i sadrži njegovu MAC adresu. HOST1 na osnovu tog odgovora upisuje MAC adresu u svoj registar i signalizira da je rezolucija završena. 
+
+<div align="center">
+  <img src="Graficki_prikaz_scenarija/scenario1.png" alt="Scenario1" title="Scenario1">
+  <p><b>Slika 1:</b> Grafički prikaz validne rezolucije</p>
+</div>
+
 Ovaj scenario je bitan jer pokazuje osnovnu funkcionalnost ARP protokola: kako se IP adrese mapiraju na fizičke MAC adrese i kako se omogućava komunikacija unutar lokalne mreže. Bez ovakve uspješne razmjene, hostovi ne bi mogli slati pakete jedni drugima.
 
 
@@ -21,10 +27,20 @@ Ovaj scenario je bitan jer pokazuje osnovnu funkcionalnost ARP protokola: kako s
 
 Slika 2 prikazuje scenario u kojem se opisuje šta se dešava kada se traži IP adresa koja ne postoji u mreži. HOST1 šalje ARP Request kao broadcast, pitajući “Ko ima IP adresu 192.168.10.10?”. Poruka se prenosi kroz LAN i svi hostovi je primaju, ali nijedan od njih nema tu adresu. Zbog toga nema odgovora, nema ARP Reply poruke. HOST1 ostaje u stanju čekanja određeno vrijeme, dok signal _busy_ pokazuje da je rezolucija u toku. Kada istekne vrijeme čekanja, modul generiše signal _done_, ali MAC adresa ostaje nevalidna. 
 
+<div align="center">
+  <img src="Graficki_prikaz_scenarija/scenario2.png" alt="Scenario2" title="Scenario2">
+  <p><b>Slika 2:</b> Grafički prikaz nevalidne rezolucije</p>
+</div>
+
 Ovaj scenario je važan jer pokazuje kako sistem reaguje na nepostojeće adrese: umjesto da se beskonačno čeka, uvodi se mehanizam timeout-a koji osigurava da se proces završi i da se zna da rezolucija nije uspjela. To je ključno za stabilnost mreže i za sprječavanje blokiranja komunikacije.
 
-### Scenario 3 - 
+### Scenario 3 - Višestruki zahtjevi
 Na slici 3 prikazan je treći scenario koji testira ponašanje modula kada se pojavi novi zahtjev dok je prethodni još u toku. HOST1 šalje prvi ARP Request za IP adresu 192.168.10.4, a HOST4 odgovara sa ARP Reply i daje svoju MAC adresu. Dok je modul zauzet obradom tog zahtjeva (_busy_=1), pojavi se novi _resolve_ signal, koji je označen kao ARP Request 2. Taj drugi zahtjev se ne šalje u mrežu jer modul ne može paralelno obrađivati više rezolucija. On se ili ignoriše ili stavlja u red čekanja, ali u svakom slučaju ne ide prema switchu dok prvi proces nije završen. Tek kada se prvi zahtjev završi (_done_=1), modul može prihvatiti novi zahtjev. 
+
+<div align="center">
+  <img src="Graficki_prikaz_scenarija/scenario3.png" alt="Scenario3" title="Scenario3">
+  <p><b>Slika 1:</b> Grafički prikaz višestrukih zahtjeva</p>
+</div>
 
 Ovaj scenario pokazuje kako se sistem ponaša u slučaju paralelnih zahtjeva i osigurava da se rezolucije obrađuju sekvencijalno, bez konflikata i bez gubitka podataka. Koristeći ovajscenario testirana je robusnost FSM a i potvrđuje da modul pravilno upravlja stanjem zauzetosti.
 
