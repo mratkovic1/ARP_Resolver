@@ -20,6 +20,10 @@ Na slici 1 prikazan je osnovni tok ARP komunikacije, onaj koji se dešava kada r
   <p><b>Slika 1:</b> Grafički prikaz uspješne rezolucije</p>
 </div>
 
+Na samom početku, sistem se nalazi u reset stanju: signal `reset` je postavljen na logičku jedinicu (`'1'`). Dokle god je `reset` aktivan, svi ostali izlazni signali (`busy`, `done`, `mac_address`) su neaktivni, a modul miruje. Kada `reset` padne na nulu (`'0'`), modul je spreman da pređe u normalan radni tok. U tom trenutku, korisnik inicira rezoluciju aktiviranjem signala `resolve`. Istovremeno se na ulaz `ip_address` postavlja vrijednost IP adrese koju treba razriješiti. Modul reaguje tako što postavlja signal `busy` na jedinicu, čime označava da je proces u toku. Tokom ovog perioda, na izlaznom Avalon-ST interfejsu (`out_data`, `out_valid`, `out_sop`, `out_eop`) generiše se ARP Request poruka.
+
+Nakon slanja zahtjeva, modul prelazi u fazu čekanja. Signal `busy` ostaje aktivan, a ulazni interfejs (`in_data`, `in_valid`, `in_sop`, `in_eop`) se prati kako bi se detektovala dolazna ARP Reply poruka. Kada validan odgovor stigne, modul ga prepoznaje i kao rezultat ne upisuje stvarnu MAC adresu, već aktivira izlazne signale `mac_address` i `done` u trajanju jednog takta. Time se označava da je rezolucija završena i da je odgovor uspješno primljen. Nakon toga, `done` se vraća na nulu, `busy` se deaktivira, i modul se vraća u stanje spremnosti (`IDLE`), čekajući novi zahtjev.
+
 Ovaj scenario je bitan jer pokazuje osnovnu funkcionalnost ARP protokola: kako se IP adrese mapiraju na fizičke MAC adrese i kako se omogućava komunikacija unutar lokalne mreže. Bez ovakve uspješne razmjene, hostovi ne bi mogli slati pakete jedni drugima.
 
 
