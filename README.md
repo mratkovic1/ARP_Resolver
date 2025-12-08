@@ -75,23 +75,12 @@ U nastavku su prikazani signali entiteta `arp_resolver` zajedno sa njihovim tipo
 
 U ovom dijelu predstavljena su stanja FSM-a (*engl. Finite State Machine*) modela za VHDL modul koji implementira ARP rezoluciju MAC adrese. Stanja su definisana na osnovu tri ključna scenarija: uspješna rezolucija, neuspješna rezolucija, te višestruki zahtjevi koji se pojavljuju dok je modul zauzet. 
 
-**IDLE**  
-Početno stanje u kojem modul miruje i čeka aktivaciju putem signala `resolve`. U ovom trenutku svi izlazni signali poput `busy` i `done` su neaktivni. Modul ostaje u ovom stanju dok se ne inicira zahtjev za rezoluciju IP adrese.
-
-**SEND_REQUEST**  
-Nakon aktivacije, modul prelazi u stanje slanja ARP Request poruke. Kroz Avalon-ST sučelje generiše se niz bajtova koji čine ARP zahtjev, uključujući poznatu IP adresu i nultu MAC adresu. Tokom ovog stanja signal `busy` je aktivan, što označava da je modul zauzet obradom zahtjeva.
-
-**WAIT_REPLY**  
-Nakon što je ARP zahtjev poslan, modul prelazi u stanje čekanja na odgovor. Putem ulaznog Avalon-ST sučelja prati se dolazni tok podataka, tražeći validnu ARP Reply poruku. Modul ostaje u ovom stanju dok ne primi odgovor ili dok ne istekne definisani vremenski okvir.
-
-**RESOLUTION_SUCCESS**  
-Ukoliko je primljena validna ARP Reply poruka koja odgovara traženoj IP adresi, modul prelazi u stanje uspješne rezolucije. MAC adresa se upisuje u izlazni signal `mac_address`, a signal `done` se aktivira na jedan takt kako bi označio završetak procesa. Nakon toga, modul se vraća u stanje IDLE.
-
-**RESOLUTION_FAIL**  
-Ako odgovor nije primljen u predviđenom vremenu ili je nevalidan, modul prelazi u stanje neuspješne rezolucije. Signal `done` se i dalje aktivira, ali `mac_address` ostaje nedefinisan ili postavljen na nultu vrijednost. Modul se zatim vraća u stanje IDLE, spreman za novi zahtjev.
-
-**MULTIPLE_REQUESTS**  
-Ukoliko se signal `resolve` pojavi dok je modul već zauzet (`busy = '1'`), prelazi se u stanje višestrukih zahtjeva. U ovom stanju modul može ignorisati dodatne zahtjeve, staviti ih u red čekanja ili ih obraditi sekvencijalno, u zavisnosti od implementacije. Nakon obrade, vraća se u stanje IDLE.
+- **IDLE** - Početno stanje u kojem modul miruje i čeka aktivaciju putem signala `resolve`. U ovom trenutku svi izlazni signali poput `busy` i `done` su neaktivni. Modul ostaje u ovom stanju dok se ne inicira zahtjev za rezoluciju IP adrese.
+- **SEND_REQUEST** - Nakon aktivacije, modul prelazi u stanje slanja ARP Request poruke. Kroz Avalon-ST sučelje generiše se niz bajtova koji čine ARP zahtjev, uključujući poznatu IP adresu i nultu MAC adresu. Tokom ovog stanja signal `busy` je aktivan, što označava da je modul zauzet obradom zahtjeva.
+- **WAIT_REPLY** - Nakon što je ARP zahtjev poslan, modul prelazi u stanje čekanja na odgovor. Putem ulaznog Avalon-ST sučelja prati se dolazni tok podataka, tražeći validnu ARP Reply poruku. Modul ostaje u ovom stanju dok ne primi odgovor ili dok ne istekne definisani vremenski okvir.
+- **RESOLUTION_SUCCESS** - Ukoliko je primljena validna ARP Reply poruka koja odgovara traženoj IP adresi, modul prelazi u stanje uspješne rezolucije. MAC adresa se upisuje u izlazni signal `mac_address`, a signal `done` se aktivira na jedan takt kako bi označio završetak procesa. Nakon toga, modul se vraća u stanje IDLE.
+- **RESOLUTION_FAIL** - Ako odgovor nije primljen u predviđenom vremenu ili je nevalidan, modul prelazi u stanje neuspješne rezolucije. Signal `done` se i dalje aktivira, ali `mac_address` ostaje nedefinisan ili postavljen na nultu vrijednost. Modul se zatim vraća u stanje IDLE, spreman za novi zahtjev.
+- **MULTIPLE_REQUESTS** - Ukoliko se signal `resolve` pojavi dok je modul već zauzet (`busy = '1'`), prelazi se u stanje višestrukih zahtjeva. U ovom stanju modul može ignorisati dodatne zahtjeve, staviti ih u red čekanja ili ih obraditi sekvencijalno, u zavisnosti od implementacije. Nakon obrade, vraća se u stanje IDLE.
 
 
 
