@@ -36,6 +36,8 @@ Slika 2 prikazuje scenario u kojem se opisuje šta se dešava kada se traži IP 
   <p><b>Slika 2:</b> Grafički prikaz neuspješne rezolucije</p>
 </div>
 
+Do trenutka slanja `'ARP Request'` poruke tok signala se odvija identično kao u scenariju 1. Razlika nastaje nakon emitovanja zahtjeva, jer u ovom slučaju nijedan uređaj u mreži ne posjeduje traženu IP adresu i povratna poruka ne stiže. Signal `'busy'` ostaje aktivan (`'1'`), a ulazni interfejs (`'in_data'`, `'in_valid'`, `'in_sop'`, `'in_eop'`) se prati kako bi se registrovao eventualni `'ARP Reply'`. Kada istekne predviđeni vremenski interval, modul zaključuje da rezolucija nije uspjela. Kao oznaku završetka pokušaja, aktivira se signal `'done'` u trajanju jednog takta (`'1'`). Signal `'mac_address'` ostaje nepromijenjen i ne daje nikakvu vrijednost, jer nije dobijen odgovor. Nakon toga, `'done'` se vraća u neaktivno stanje (`'0'`), `'busy'` se gasi (`'0'`), i modul se vraća u početno stanje spremnosti (`'IDLE'`), spreman za novi zahtjev.
+
 Ovaj scenario je važan jer pokazuje kako sistem reaguje na nepostojeće adrese: umjesto da se beskonačno čeka, uvodi se mehanizam timeout-a koji osigurava da se proces završi i da se zna da rezolucija nije uspjela. To je ključno za stabilnost mreže i za sprječavanje blokiranja komunikacije.
 
 ### Scenario 3 - Višestruki zahtjevi
@@ -46,7 +48,9 @@ Na slici 3 prikazan je treći scenario koji testira ponašanje modula kada se po
   <p><b>Slika 3:</b> Grafički prikaz višestrukih zahtjeva</p>
 </div>
 
-Ovaj scenario pokazuje kako se sistem ponaša u slučaju paralelnih zahtjeva i osigurava da se rezolucije obrađuju sekvencijalno, bez konflikata i bez gubitka podataka. Koristeći ovajscenario testirana je robusnost FSM a i potvrđuje da modul pravilno upravlja stanjem zauzetosti.
+Razlika u ovom scenariju u odnosu na prethodna dva scenarija oslikava se kada tokom obrade prvog zahtjeva pojavi novi 'resolve' signal. Pošto je modul već zauzet ('busy'='1'), drugi zahtjev se ne šalje u mrežu. Modul ne može paralelno obrađivati više rezolucija, pa se novi zahtjev ili ignoriše ili stavlja u internu čekalicu, ali u svakom slučaju ne ide prema izlaznom interfejsu dok prvi proces nije završen. Tek kada se prvi zahtjev kompletira i signal 'done' bude aktiviran ('1'), modul se vraća u stanje spremnosti i može prihvatiti novi 'resolve'.
+
+Ovaj scenario pokazuje kako se sistem ponaša u slučaju paralelnih zahtjeva i osigurava da se rezolucije obrađuju sekvencijalno, bez konflikata i bez gubitka podataka. Koristeći ovajscenario testirana je robusnost FSM-a i potvrđuje da modul pravilno upravlja stanjem zauzetosti.
 
 
 ## Opis ulaznih i izlaznih signala modula
