@@ -41,7 +41,7 @@ Do trenutka slanja `'ARP Request'` poruke tok signala se odvija identično kao u
 Ovaj scenario je važan jer pokazuje kako sistem reaguje na nepostojeće adrese: umjesto da se beskonačno čeka, uvodi se mehanizam timeout-a koji osigurava da se proces završi i da se zna da rezolucija nije uspjela. To je ključno za stabilnost mreže i za sprječavanje blokiranja komunikacije.
 
 ### Scenario 3 - Višestruki zahtjevi
-Na slici 3 prikazan je treći scenario koji testira ponašanje modula kada se pojavi novi zahtjev dok je prethodni još u toku. HOST1 šalje prvi ARP Request za IP adresu 192.168.10.4, a HOST4 odgovara sa ARP Reply i daje svoju MAC adresu. Dok je modul zauzet obradom tog zahtjeva (`busy`=1), pojavi se novi `resolve` signal, koji je označen kao ARP Request 2. Taj drugi zahtjev se ne šalje u mrežu jer modul ne može paralelno obrađivati više rezolucija. On se ili ignoriše ili stavlja u red čekanja, ali u svakom slučaju ne ide prema switchu dok prvi proces nije završen. Tek kada se prvi zahtjev završi (`done`=1), modul može prihvatiti novi zahtjev. 
+Na slici 3 prikazan je treći scenario koji testira ponašanje modula kada se pojavi novi zahtjev dok je prethodni još u toku. HOST1 šalje prvi ARP Request za IP adresu 192.168.10.4, a HOST4 odgovara sa ARP Reply i daje svoju MAC adresu. Dok je modul zauzet obradom tog zahtjeva, pojavi se novi ARP Request 2. Taj drugi zahtjev se ne šalje u mrežu jer modul ne može paralelno obrađivati više rezolucija. On se ili ignoriše ili stavlja u red čekanja, ali u svakom slučaju ne ide prema switch-u dok prvi proces nije završen. Tek kada se prvi zahtjev završi, modul može prihvatiti novi zahtjev. 
 
 <div align="center">
   <img src="Graficki_prikaz_scenarija/scenario3.png" alt="Scenario3" title="Scenario3">
