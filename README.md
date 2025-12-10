@@ -12,8 +12,10 @@ Prema Odomu [2], ARP protokol se temelji na razmjeni dvije osnovne poruke:
 
 ARP koristi vrlo jednostavnu strukturu poruke koja može da sadrži zahtjev ili odgovor za rezoluciju adrese. Ove poruke se prenose na sloju podatkovne veze (data link layer) kao sirovi sadržaj paketa. Kada se koristi Ethernet, vrijednost 0x0806 u polju EtherType označava da je riječ o ARP okviru. Dužina ARP poruke zavisi od formata adresa koje se koriste na mrežnom i link sloju. U nastavku prikazana je slika 1 na kojoj je predstavljen jedan ARP paket, te su navedene funkcionalnosti svih polja koja sačinjavaju taj paket. Vrijednosti ARP parametara su standardizovane i održava ih IANA (*engl. Internet Assigned Numbers Authority*) [3].
 
-- postaviti sliku-
-
+<div align="center">
+  <img src="Graficki_prikaz/ARP_packet.png" alt="ARP_packet" title="ARP_packet">
+  <p><b>Slika 1:</b> Struktura ARP poruke</p>
+</div>
 
 
 
@@ -25,7 +27,7 @@ ARP koristi vrlo jednostavnu strukturu poruke koja može da sadrži zahtjev ili 
 - **Sender Hardware Address (SHA)**: 48 bita Medijska adresa pošiljaoca. U ARP zahtjevu ovo polje označava adresu hosta koji šalje zahtjev. U ARP odgovoru ovo polje označava adresu hosta koji je tražen.
 - **Sender Protocol Address (SPA)**: 32 bita Internetwork adresa pošiljaoca.
 - **Target Hardware Address (THA)**: 48 bita Medijska adresa namijenjenog primaoca. U ARP zahtjevu ovo polje se zanemaruje. U ARP odgovoru ovo polje označava adresu hosta koji je inicirao ARP zahtjev.
-- **Target Protocol Address (TPA)**: 32 bita Internetwork adresa namijenjenog primaoca.
+- **Target Protocol Address (TPA)**: 32 bita Internetwork adresa namijenjenog primaoca [3].
 
 Prilikom razmjene ARP Request i ARP Reply poruka, polja poput HTYPE, PTYPE, HLEN i PLEN ostaju nepromijenjena, jer uvijek opisuju tip mreže i veličinu adresa.
 
@@ -33,6 +35,15 @@ U ARP Requestu popunjena su polja sa hardverskom i protokolskom adresom pošilja
 
 U ARP Replyu uređaj koji odgovara prvo upoređuje vrijednost SPA iz zahtjeva sa vlastitom IP adresom. Ako se podudara, generiše odgovor. U tom odgovoru, SHA i SPA polja se popunjavaju njegovom vlastitom MAC i IP adresom, dok se vrijednosti koje su došle od resolvera (inicijatora zahtjeva) smještaju u THA i TPA. Polje OPER tada dobije vrijednost 2. Na taj način se originalnom pošiljaocu vraća tražena veza između ciljne IP adrese i odgovarajuće MAC adrese. Ako se IP adresa ne podudara, uređaj jednostavno ignoriše zahtjev i ne šalje ARP Reply. Prethodno opisano predstavljeno je sekvencijskim dijagramima na slici 2 i slici 3.
 
+<div align="center">
+  <img src="Graficki_prikaz/Graficki_prikaz_scenario1.png" alt="Scenario1" title="Scenario1">
+  <p><b>Slika 2:</b> Grafički prikaz uspješne rezolucije</p>
+</div>
+
+<div align="center">
+  <img src="Graficki_prikaz/Graficki_prikaz_scenario2.png" alt="Scenario2" title="Scenario2">
+  <p><b>Slika 3:</b> Grafički prikaz uspješne rezolucije</p>
+</div>
 
 
 
