@@ -14,7 +14,7 @@ ARP koristi vrlo jednostavnu strukturu poruke koja može da sadrži zahtjev ili 
 
 <div align="center">
   <img src="Graficki_prikaz/ARP_packet.png" alt="ARP_packet" title="ARP_packet">
-  <p><b>Slika 1:</b> Struktura ARP poruke</p>
+  <p><b>Slika 1:</b> Struktura ARP poruke [3]</p>
 </div>
 
 
@@ -42,7 +42,7 @@ U ARP Replyu uređaj koji odgovara prvo upoređuje vrijednost SPA iz zahtjeva sa
 
 <div align="center">
   <img src="Graficki_prikaz/Graficki_prikaz_scenario2.png" alt="Scenario2" title="Scenario2">
-  <p><b>Slika 3:</b> Grafički prikaz uspješne rezolucije</p>
+  <p><b>Slika 3:</b> Grafički prikaz neuspješne rezolucije</p>
 </div>
 
 
