@@ -43,7 +43,7 @@ U ARP Replyu, uređaj koji odgovara prvo upoređuje vrijednost SPA iz zahtjeva s
 Drugi scenario predstavlja obacivanje ARP Reply-a zbog nočekivanog sadržaja. Bilo koje od prethodno definisanih polja u ARP paketu može biti različito od očekivanog, zvog čega će Resolver odbaciti taj isti paket. Na slici 3 prikazan je opisani scenarij. 
 
 <div align="center">
-  <img src="Graficki_prikaz/Graficki_prikaz_sscen2.png" alt="Scenario2" title="Scenario2">
+  <img src="Graficki_prikaz/Graficki_prikaz_sscen2.drawio.png" alt="Scenario2" title="Scenario2">
   <p><b>Slika 3:</b> Grafički prikaz odbacivanja paketa</p>
 </div>
 
