@@ -36,14 +36,14 @@ U ARP Requestu popunjena su polja sa hardverskom i protokolskom adresom pošilja
 U ARP Replyu, uređaj koji odgovara prvo upoređuje vrijednost SPA iz zahtjeva sa vlastitom IP adresom. Ako se podudara, generiše odgovor. U tom odgovoru, SHA i SPA polja se popunjavaju njegovom vlastitom MAC i IP adresom, dok se vrijednosti koje su došle od Resolvera (inicijatora zahtjeva) smještaju u THA i TPA. Polje OPER tada dobije vrijednost 2. Na taj način se originalnom pošiljaocu vraća tražena veza između ciljne IP adrese i odgovarajuće MAC adrese (slika 2). 
 
 <div align="center">
-  <img src="Graficki_prikaz/Graficki_prikaz_scenario1.png" alt="Scenario1" title="Scenario1">
+  <img src="Graficki_prikaz/arp_resolver_scenario1.png" alt="Scenario1" title="Scenario1">
   <p><b>Slika 2:</b> Grafički prikaz uspješne rezolucije</p>
 </div>
 
 Drugi scenario predstavlja obacivanje ARP Reply-a zbog nočekivanog sadržaja. Bilo koje od prethodno definisanih polja u ARP paketu može biti različito od očekivanog, zvog čega će Resolver odbaciti taj isti paket. Na slici 3 prikazan je opisani scenarij. 
 
 <div align="center">
-  <img src="Graficki_prikaz/Graficki_prikaz_scenario2.png" alt="Scenario2" title="Scenario2">
+  <img src="Graficki_prikaz/arp_resolver_scenario1.png" alt="Scenario2" title="Scenario2">
   <p><b>Slika 3:</b> Grafički prikaz odbacivanja paketa</p>
 </div>
 
