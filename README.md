@@ -82,7 +82,10 @@ Nakon određenog vremena, od Respondera stiže ARP reply paket. Podaci dolaze kr
 
 Kada je MAC adresa uspješno pročitana, signal `done` se aktivira na jedan takt, čime se označava da je rezolucija završena i da je rezultat validan. Nakon toga, `busy` se vraća u stanje 0, što znači da je sistem slobodan i spreman za novu rezoluciju.
 
-
+<div align="center">
+  <img src="Wavedrom/wavedrom_scenario1.png" alt="Scenario1" title="Scenario1">
+  <p><b>Slika 4:</b> Wavedrom - uspješna rezolucija</p>
+</div>
 
 
 
