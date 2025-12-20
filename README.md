@@ -48,11 +48,52 @@ Drugi scenario predstavlja obacivanje ARP Reply-a zbog nočekivanog sadržaja. B
 </div>
 
 
-
-
-
-
 ## Opis ulaznih i izlaznih signala modula
+
+Signali koji se koriste tokom izrade zadanog modula, predstavljeni su u nastavku: 
+
+| IN/OUT | Tip                | Signal       | Opis                                                                |
+|-----------|---------------------|--------------|-----------------------------------------------------------------------------|
+| IN        | STD_LOGIC           | clock        | Clock signal koji pokreće sekvencijalnu logiku.                              |
+| IN        | STD_LOGIC           | reset        | Asinhroni reset, vraća modul u početno stanje.                              |
+| IN        | STD_LOGIC           | resolve      | Impuls kojim se inicira ARP rezolucija za zadati `ip_address`.              |
+| IN        | STD_LOGIC_VECTOR(31 downto 0) | ip_address   | IP adresa za koju se traži MAC adresa.                                      |
+| OUT       | STD_LOGIC           | done         | Impuls (1 takt) označava da je rezolucija završena i da je `mac_address` validan. |
+| OUT       | STD_LOGIC_VECTOR(47 downto 0) | mac_address  | Rezultat rezolucije – MAC adresa dobijena iz ARP reply paketa.              |
+| OUT       | STD_LOGIC           | busy         | Pokazuje da je rezolucija u toku; ide na 1 nakon `resolve`, vraća se na 0 nakon odgovora ili timeout-a. |
+| IN        | STD_LOGIC_VECTOR(7 downto 0)  | in_data      | Bajt‑stream ARP reply paketa (Ethernet + ARP polja).                        |
+| IN        | STD_LOGIC           | in_valid     | Označava da je bajt na `in_data` važeći.                                    |
+| IN        | STD_LOGIC           | in_sop       | Start of packet – aktivan na prvom bajtu ARP reply paketa.                  |
+| IN        | STD_LOGIC           | in_eop       | End of packet – aktivan na zadnjem bajtu ARP reply paketa.                  |
+| OUT       | STD_LOGIC           | in_ready     | Izlaz iz modula koji pokazuje da li je modul spreman da primi sljedeći bajt.     |
+| OUT       | STD_LOGIC_VECTOR(7 downto 0)  | out_data     | Bajt‑stream ARP request paketa (sva polja).                      |
+| OUT       | STD_LOGIC           | out_valid    | Označava da je bajt na `out_data` važeći.                                   |
+| OUT       | STD_LOGIC           | out_sop      | Start of packet – aktivan na prvom bajtu ARP request paketa.                |
+| OUT       | STD_LOGIC           | out_eop      | End of packet – aktivan na zadnjem bajtu ARP request paketa.                |
+| IN        | STD_LOGIC           | out_ready    | Dolazi od prijemnika; pokazuje da li može da primi sljedeći bajt.            |
+
+### Scenarij 1: Uspješna ARP rezolucija
+
+U ovom scenariju prikazano je ponašanje modula kada se tražena IP adresa uspješno razriješi u odgovarajuću MAC adresu. Nakon inicijalnog resetovanja sistema, svi izlazni signali se postavljaju u početno stanje: `done = 0`, `busy = 0`, a `mac_address` je nevažeći. Modul miruje i čeka naredbu za pokretanje rezolucije.
+
+Proces započinje impulsom na signalu `resolve`. Time se inicira rezolucija za IP adresu koja se nalazi na ulazu `ip_address`. Odmah nakon toga, signal `busy` prelazi u stanje 1, što označava da je sistem zauzet i da je rezolucija u toku. Modul zatim generiše ARP request paket, koji se bajt po bajt šalje preko izlaznog interfejsa `out_data`. Tok podataka je praćen kontrolnim signalima: `out_valid` označava da je bajt važeći, `out_sop` se aktivira na početku paketa, a `out_eop` na njegovom kraju. Na ovaj način se prema mreži šalje broadcast poruka kojom se traži MAC adresa za zadati IP.
+
+Nakon određenog vremena, od Respondera stiže ARP reply paket. Podaci dolaze kroz ulazni interface `in_data`, uz prateće signale `in_valid`, `in_sop` i `in_eop`, dok `in_ready` pokazuje da je modul spreman da primi podatke. U polju *SHA* ovog paketa nalazi se tražena MAC adresa. Modul je izdvoji i postavi na izlaz `mac_address`.
+
+Kada je MAC adresa uspješno pročitana, signal `done` se aktivira na jedan takt, čime se označava da je rezolucija završena i da je rezultat validan. Nakon toga, `busy` se vraća u stanje 0, što znači da je sistem slobodan i spreman za novu rezoluciju.
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
