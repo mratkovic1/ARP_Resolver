@@ -72,6 +72,8 @@ Signali koji se koriste tokom izrade zadanog modula, predstavljeni su u nastavku
 | OUT       | STD_LOGIC           | out_eop      | End of packet – aktivan na zadnjem bajtu ARP request paketa.                |
 | IN        | STD_LOGIC           | out_ready    | Dolazi od prijemnika; pokazuje da li može da primi sljedeći bajt.            |
 
+Za opis signala korišteni su opisi Avalon-ST interface-a [4].
+
 ### Scenarij 1: Uspješna ARP rezolucija
 
 U ovom scenariju prikazano je ponašanje modula kada se tražena IP adresa uspješno razriješi u odgovarajuću MAC adresu. Nakon inicijalnog resetovanja sistema, svi izlazni signali se postavljaju u početno stanje: `done = 0`, `busy = 0`, a `mac_address` je nevažeći. Modul miruje i čeka naredbu za pokretanje rezolucije.
@@ -87,7 +89,20 @@ Kada je MAC adresa uspješno pročitana, signal `done` se aktivira na jedan takt
   <p><b>Slika 4:</b> Wavedrom - uspješna rezolucija</p>
 </div>
 
+### Scenarij 2: Neuspješna ARP rezolucija (bez odgovora)
 
+U ovom scenariju prikazano je ponašanje modula kada za traženu IP adresu ne stigne validan ARP odgovor. Nakon inicijalnog resetovanja sistema, svi izlazni signali se postavljaju u početno stanje: `done = 0`, `busy = 0`, a `mac_address` je nevažeći. Modul miruje i čeka naredbu za pokretanje rezolucije.
+
+Proces započinje impulsom na signalu `resolve`. Time se inicira rezolucija za IP adresu koja se nalazi na ulazu `ip_address`. Odmah nakon toga, signal `busy` prelazi u stanje 1, što označava da je sistem zauzet i da je rezolucija u toku. Modul zatim generiše ARP request paket, koji se bajt po bajt šalje preko izlaznog interface-a `out_data`. Tok podataka je praćen kontrolnim signalima: `out_valid` označava da je bajt važeći, `out_sop` se aktivira na početku paketa, a `out_eop` na njegovom kraju. Na ovaj način se prema mreži šalje broadcast poruka kojom se traži MAC adresa za zadati IP.
+
+Međutim, u ovom slučaju od mreže ne stiže validan ARP reply. Ulazni interfejs `in_data` ostaje neaktivan ili nosi pogrešne vrijednosti, dok signali `in_valid`, `in_sop` i `in_eop` ne označavaju dolazak ispravnog paketa. Zbog toga modul ne može izdvojiti traženu MAC adresu, pa izlaz `mac_address` ostaje nevažeći.
+
+Kako vrijeme prolazi, sistem ostaje u stanju zauzetosti (`busy = 1`) sve dok ne istekne definisani timeout. Nakon isteka vremena, `busy` se vraća u stanje 0, čime se označava da je rezolucija završena, ali bez uspjeha. Signal `done` u ovom scenariju nikada ne prelazi u stanje 1, jer nije dobijen validan rezultat. Na taj način se kompletira ciklus neuspješne ARP razmjene: od inicijalnog zahtjeva, preko slanja paketa, do isteka vremena bez odgovora.
+
+<div align="center">
+  <img src="Wavedrom/wavedrom_scenario2.png" alt="Scenario2" title="Scenario2">
+  <p><b>Slika 5:</b> Wavedrom - neuspješna rezolucija (bez odgovora)</p>
+</div>
 
 
 
