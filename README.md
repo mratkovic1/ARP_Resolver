@@ -42,10 +42,20 @@ ARP koristi vrlo jednostavnu strukturu poruke koja može da sadrži zahtjev ili 
 - **Target Protocol Address (TPA)**: IP adresa namijenjenog primaoca. Dužina polja je 32 bita [4].
 
 ### Scenarij 1 – Uspješna rezolucija adrese
-U prvom scenariju prikazan je standardni tok ARP komunikacije. Proces započinje slanjem ARP Request poruke od strane Resolvera. Na Ethernet nivou, okvir se formira tako da polje odredišne adrese sadrži broadcast vrijednost (FF:FF:FF:FF:FF:FF), dok polje izvorne adrese nosi MAC adresu pošiljaoca. U ARP dijelu okvira popunjena su polja SHA i SPA vrijednostima pošiljaoca, dok je THA prazno, a TPA sadrži IP adresu ciljnog uređaja.
 
-Sekvencijski dijagram u ovom scenariju prikazuje razmjenu između Resolvera i ciljnog uređaja. Resolver šalje ARP Request u kojem navodi vlastite adrese i traženu IP adresu, dok responder, prepoznavši da se vrijednost u TPA polju podudara s njegovom IP adresom, generiše ARP Reply i vraća ga direktno Resolveru. On upoređuje traženu adresu sa vlastitom i, ukoliko postoji podudaranje, generiše ARP Reply. U odgovoru se polja SHA i SPA popunjavaju njegovim vlastitim MAC i IP podacima, dok se vrijednosti inicijatora zahtjeva smještaju u THA i TPA. Na Ethernet nivou, okvir se šalje unicastom – odredišna adresa postaje MAC adresa Resolvera. Sekvencijski dijagram jasno pokazuje tok: zahtjev ide prema Responderu, a odgovor se vraća direktno pošiljaocu. Rezultat je uspješna rezolucija, gdje Resolver dobija traženu MAC adresu i može nastaviti enkapsulaciju IP paketa.
+U lokalnim Ethernet mrežama, kada jedan uređaj želi poslati IP paket drugom uređaju, neophodno je da poznaje njegovu MAC adresu. Ukoliko ta informacija nije dostupna u lokalnoj ARP tabeli, pokreće se proces dinamičke rezolucije adrese putem ARP protokola. Prikazani scenario ilustrira upravo taj tok komunikacije između dva uređaja – ARP Resolvera i ARP Respondera – u kojem se uspješno ostvaruje povezivanje IP adrese sa odgovarajućom MAC adresom.
 
+Proces započinje slanjem ARP Request poruke od strane Resolvera. Ova poruka se enkapsulira unutar Ethernet okvira, čije zaglavlje sadrži broadcast adresu (FF:FF:FF:FF:FF:FF) kao odredišnu, čime se osigurava da poruka stigne do svih uređaja u lokalnoj mreži. Izvorna adresa u zaglavlju je MAC adresa Resolvera, dok polje tipa (Type) nosi vrijednost 0x0806, što označava da se prenosi ARP poruka.
+
+U ARP dijelu okvira nalaze se standardizovana polja: HTYPE (Ethernet), PTYPE (IPv4), HLEN i PLEN (dužine MAC i IP adresa), te OPER sa vrijednošću 1, što označava zahtjev. Polja SHA i SPA sadrže MAC i IP adresu pošiljaoca, dok je THA postavljeno na nule, jer MAC adresa ciljnog uređaja još nije poznata. Polje TPA sadrži IP adresu uređaja čija se MAC adresa traži – u ovom slučaju Respondera.
+
+Nakon prijema ARP Requesta, Responder analizira sadržaj poruke. Ključna provjera odnosi se na polje TPA: ukoliko se njegova vrijednost podudara sa lokalnom IP adresom Respondera, uređaj prepoznaje da je upravo on traženi cilj. U tom trenutku generiše ARP Reply poruku, koja se šalje direktno Resolveru putem unicast Ethernet okvira. U zaglavlju okvira sada se kao odredišna adresa navodi MAC adresa Resolvera, dok izvorna ostaje MAC adresa Respondera. Polje tipa ostaje 0x0806, jer se i dalje prenosi ARP sadržaj.
+
+U ARP dijelu odgovora, polje OPER dobija vrijednost 2, što označava odgovor. Polja SHA i SPA sada sadrže MAC i IP adresu Respondera, dok se u THA i TPA upisuju vrijednosti koje su prethodno došle od Resolvera. Na taj način se uspostavlja veza između IP adrese cilja i njegove fizičke adrese, čime se omogućava daljnja komunikacija na mrežnom sloju.
+
+Prikazani sekvencijski dijagram ilustrira tok: ARP Request se šalje kao broadcast, dok se ARP Reply vraća kao unicast. Iako dijagram prikazuje samo dva učesnika – Resolvera i Respondera – implicitno se podrazumijeva da broadcast poruka može biti primljena od strane svih uređaja u mreži, ali samo onaj čija IP adresa odgovara vrijednosti u TPA polju odgovara na zahtjev.
+
+Ovaj scenario, koji je prikazan na slici 3, predstavlja idealan tok ARP razmjene, bez grešaka u sadržaju poruke, što rezultira uspješnom rezolucijom adrese i ažuriranjem lokalne ARP tabele kod Resolvera.
 
 <div align="center">
   <img src="Graficki_prikaz/Graficki_prikaz_scenario1.png" alt="Scenario1" title="Scenario1">
@@ -54,9 +64,12 @@ Sekvencijski dijagram u ovom scenariju prikazuje razmjenu između Resolvera i ci
 
 
 ### Scenarij 2 – Odbacivanje paketa
-Drugi scenarij prikazuje situaciju u kojoj Resolver prima ARP Reply, ali ga odbacuje zbog nepravilnog sadržaja. Iako okvir na Ethernet nivou može biti formalno ispravan (ima odredišnu i izvornu adresu, tip i CRC), sadržaj ARP dijela ne odgovara očekivanim vrijednostima. To se može desiti ako TPA ne odgovara traženoj IP adresi, ako SHA sadrži pogrešnu MAC adresu, ili ako polje OPER ne nosi validnu vrijednost za odgovor.
 
-Sekvencijski dijagram u ovom scenariju prikazuje kako Resolver prima okvir, ali nakon provjere polja zaključuje da sadržaj nije konzistentan sa prethodno poslanim zahtjevom. Konkretno, u predstavljenom primjeru, polje OPER zathijeva da dobije vrijednost 2, ali umjesto toga dobija vrijednost 3. Umjesto da ažurira svoju ARP tabelu, on odbacuje paket. Ovaj tok naglašava da ARP nije samo mehanizam za razmjenu adresa, već i proces koji uključuje validaciju podataka. Na taj način se sprječava pogrešno mapiranje IP adrese na neispravnu MAC adresu, čime se osigurava pouzdanost komunikacije.
+U ovom scenariju prikazana je situacija u kojoj ARP komunikacija ne rezultira uspješnom rezolucijom adrese, iako je formalno posmatrano razmjena poruka izvršena. Proces započinje identično kao u prethodnom slučaju: ARP Resolver šalje ARP Request poruku u kojoj traži MAC adresu uređaja čija je IP adresa poznata. Ethernet okvir se formira sa broadcast odredišnom adresom (FF:FF:FF:FF:FF:FF), dok se u ARP dijelu poruke navode standardizovana polja – tipovi protokola, dužine adresa, operacija (OPER = 1), te adrese pošiljaoca i cilja. Polje THA ostaje prazno, jer MAC adresa cilja još nije poznata.
+
+Međutim, za razliku od prethodnog scenarija, odgovor koji dolazi od Respondera ne zadovoljava očekivanja Resolvera. Iako je okvir tehnički ispravno formiran – sa unicast odredišnom adresom, validnim zaglavljem i CRC kontrolom – sadržaj ARP poruke sadrži nepravilnosti. Ključna razlika u ovom slučaju jeste vrijednost polja OPER, koja iznosi 3, umjesto standardne vrijednosti 2 koja označava ARP Reply. Ova razlika signalizira da se ne radi o validnom ARP odgovoru, te Resolver odbacuje primljeni paket.
+
+Sekvencijski dijagram prikazuje tok: nakon što se ARP Request pošalje, Responder vraća poruku koja formalno izgleda kao odgovor, ali zbog odstupanja u sadržaju – bilo u operaciji, adresama ili drugim poljima – Resolver ne izvršava rezoluciju. Paket se ignoriše, a MAC adresa cilja ostaje nepoznata. Ovakav tok komunikacije naglašava važnost validacije sadržaja ARP poruke, jer se ne prihvataju odgovori koji odstupaju od standarda, bez obzira na to što okvir na fizičkom sloju može biti tehnički ispravan.
 
 <div align="center">
   <img src="Graficki_prikaz/Graficki_prikaz_scenario2.png" alt="Scenario2" title="Scenario2">
