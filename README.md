@@ -106,7 +106,7 @@ Signali koji se koriste tokom izrade zadanog modula, predstavljeni su u nastavku
 Za opis signala korišteni su opisi Avalon-ST interface-a [5].
 
 
-### Scenario 1 
+### Scenario 1 - uspješna rezolucija
 
 U ovom scenariju dijagram valnih oblika prikazuje preciznu dinamiku signala tokom procesa razrješavanja IP adrese u MAC adresu. Na početku, aktivacija signala reset dovodi sistem u početno stanje, a njegovo isključivanje omogućava da logika modula postane spremna za rad. U tom trenutku, ulazni signal `ip_address` dobija vrijednost 192.168.1.10. Ta vrijednost se pohranjuje u unutrašnju logiku modula i postaje referentna osnova za generisanje ARP Request okvira.
 
@@ -114,7 +114,7 @@ Nakon inicijalizacije, modul započinje formiranje izlaznog okvira. Signal `out_
 
 Tokom prijenosa, `out_data` nosi cjelokupnu strukturu ARP Requesta: od Ethernet zaglavlja, preko ARP polja, pa sve do tehničkih dodataka poput paddinga i CRC‑a. Svaka grupa bajtova ima svoju funkciju, a njihovo pojavljivanje u vremenu sinhronizovano je sa signalom clock, čime se potvrđuje deterministički karakter procesa.
 
-Nakon što je zahtjev poslan, sistem prelazi u stanje čekanja. U tom periodu, signal `in_valid` označava da je na ulazu prisutan okvir, dok `in_ready` potvrđuje da modul može prihvatiti podatke. Tokom ove faze, bajtovi ARP Replya se sukcesivno pojavljuju na `in_data`, a modul ih interpretira u skladu sa očekivanim formatom. Kada se potvrdi da je odgovor validan, izlazni signal mac_address dobija vrijednost fizičke adrese ciljnog uređaja. Time se proces rezolucije završava, a IP adresa 192.168.1.10 se uspješno povezuje sa odgovarajućom MAC adresom. Grafički prikaz opisanog scenarija predstavljen je na slici 5:
+Nakon što je zahtjev poslan, sistem prelazi u stanje čekanja. U tom periodu, signal `in_valid` označava da je na ulazu prisutan okvir, dok `in_ready` potvrđuje da modul može prihvatiti podatke. Tokom ove faze, bajtovi ARP Replya se sukcesivno pojavljuju na `in_data`, a modul ih interpretira u skladu sa očekivanim formatom. Kada se potvrdi da je odgovor validan, izlazni signal `mac_address` dobija vrijednost fizičke adrese ciljnog uređaja. Time se proces rezolucije završava, a IP adresa 192.168.1.10 se uspješno povezuje sa odgovarajućom MAC adresom. Grafički prikaz opisanog scenarija predstavljen je na slici 5:
 
 <div align="center">
   <img src="Wavedrom/wavedrom_s1.png" alt="Scenario1" title="Scenario1">
@@ -122,9 +122,18 @@ Nakon što je zahtjev poslan, sistem prelazi u stanje čekanja. U tom periodu, s
 </div>
 
 
+### Scenario 2 - Neuspješna rezolucija 
 
+Dijagram valnih oblika, u ovom primjeru, pokazuje kako sistem inicira razrješavanje IP adrese, ali ne dobija povratni ARP odgovor od ciljnog uređaja. Početna sekvenca ostaje nepromijenjena: aktivacijom signala `reset` sistem se inicijalizuje, a nakon njegovog deaktiviranja modul postaje spreman za rad. Ulazni signal `ip_address` dobija vrijednost 192.168.1.10, čime se pokreće generisanje ARP Request okvira. Slanje okvira odvija se kroz sinhronizovanu aktivaciju signala `out_valid` i `out_ready`, dok se niz bajtova prenosi preko `out_data`. Vrijednosti koje se pojavljuju predstavljaju kompletan ARP Request, uključujući Ethernet zaglavlje, ARP polja i tehničke dodatke. Tok prijenosa je precizno usklađen sa signalom `clock`.
 
+Međutim, za razliku od prethodnog scenarija, nakon slanja okvira ne dolazi do prijema odgovora. Signal `in_valid` ostaje neaktivan, što znači da na ulazu nije detektovan nijedan dolazni okvir. Iako `in_ready` može biti aktivan, bez dolaznih podataka njegova funkcija ostaje neiskorištena. Signal `mac_address` ne pokazuje promjene, što potvrđuje da rezolucija nije uspjela.
 
+Ovakvo ponašanje sistema ilustrira situaciju u kojoj ciljni uređaj nije dostupan na mreži, ne podržava ARP, ili je došlo do greške u komunikaciji. Modul ostaje u stanju pasivnog čekanja, bez eskalacije greške, što omogućava eventualnu ponovnu inicijaciju ili timeout mehanizam, zavisno od implementacije. Na slici 6 prikazan je primjer kada u polju OPER nije vrijednost 2 (što bi predstavljalo da je poslan ARP Reply), nego neka druga vrijednost (konkretno u ovom slučaju 3): 
+
+<div align="center">
+  <img src="Wavedrom/wavedrom_s2.png" alt="Scenario2" title="Scenario2">
+  <p><b>Slika 5:</b> Wavedrom za neuspješnu rezoluciju </p>
+</div>
 
 
 
