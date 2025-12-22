@@ -117,8 +117,8 @@ Tokom prijenosa, `out_data` nosi cjelokupnu strukturu ARP Requesta: od Ethernet 
 Nakon što je zahtjev poslan, sistem prelazi u stanje čekanja. U tom periodu, signal `in_valid` označava da je na ulazu prisutan okvir, dok `in_ready` potvrđuje da modul može prihvatiti podatke. Tokom ove faze, bajtovi ARP Replya se sukcesivno pojavljuju na `in_data`, a modul ih interpretira u skladu sa očekivanim formatom. Kada se potvrdi da je odgovor validan, izlazni signal mac_address dobija vrijednost fizičke adrese ciljnog uređaja. Time se proces rezolucije završava, a IP adresa 192.168.1.10 se uspješno povezuje sa odgovarajućom MAC adresom. Grafički prikaz opisanog scenarija predstavljen je na slici 5:
 
 <div align="center">
-  <img src="Graficki_prikaz/Graficki_prikaz_scenario2.png" alt="Scenario2" title="Scenario2">
-  <p><b>Slika 3:</b> Wavedrom za uspješnu rezoluciju </p>
+  <img src="Wavedrom/wavedrom_scenario1.png" alt="Scenario1" title="Scenario1">
+  <p><b>Slika 5:</b> Wavedrom za uspješnu rezoluciju </p>
 </div>
 
 
