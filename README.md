@@ -139,7 +139,7 @@ Ovakvo ponašanje sistema ilustrira situaciju u kojoj ciljni uređaj nije dostup
 
 ## Dizajn konačnog automata – FSM dijagram
 
-Rješenje modula **ARP_Resolver** implementirano je kao deterministički konačni automat (*engl. Finite State Machine – FSM*) koji upravlja cjelokupnim tokom razrješavanja IP adrese u odgovarajuću MAC adresu. Dizajn je dominantno zasnovan na Mooreovom modelu, pri čemu izlazni signali u najvećoj mjeri zavise od trenutnog stanja automata, dok su tranzicije između stanja uslovljene ulaznim signalima. Ovakav hibridni Moore/Mealy pristup predstavlja uobičajeno rješenje u sinkronim mrežnim modulima i osigurava stabilan i deterministički rad sklopa. Na slici 7 prikazan je FSM dijagram sa svim relevantnim stanjima, tranzicijama i kontrolnim signalima.
+Rješenje modula **ARP_Resolver** implementirano je kao deterministički konačni automat (*engl. Finite State Machine – FSM*) koji upravlja cjelokupnim tokom prevođenja logičke IP adrese u fizičku MAC adresu. Dizajn je dominantno zasnovan na Mooreovom modelu, pri čemu izlazni signali u najvećoj mjeri zavise od trenutnog stanja automata, dok su tranzicije između stanja uslovljene ulaznim signalima. Ovakav hibridni Moore/Mealy pristup predstavlja uobičajeno rješenje u sinhronim mrežnim modulima i osigurava stabilan i deterministički rad sklopa. Na slici 7 prikazan je FSM dijagram sa svim relevantnim stanjima, prijelazima i kontrolnim signalima.
 
 <div align="center">
   <img src="FSM/fsm.drawio.png" alt="FSM dijagram" title="FSM dijagram ARP Resolvera">
@@ -148,21 +148,20 @@ Rješenje modula **ARP_Resolver** implementirano je kao deterministički konačn
 
 ### Opis stanja automata
 
-- **Idle** – Početno stanje u kojem modul miruje i ne učestvuje u mrežnoj komunikaciji. Svi izlazni kontrolni signali su neaktivni (`busy = '0'`, `done = '0'`), a interni brojač vremena je resetovan. Proces ARP rezolucije započinje impulsom na signalu `resolve`, nakon čega automat prelazi u stanje slanja zahtjeva.
-- **Send ARP Request** – U ovom stanju modul generiše i šalje ARP Request poruku u obliku bajt-streama. Prijenos podataka realizovan je putem **Avalon-ST** interfejsa, gdje se bajtovi pojavljuju na magistrali `out_data` samo kada su signali `out_valid` i `out_ready` istovremeno aktivni. Automat ostaje u ovom stanju sve dok se ne pošalje kompletan ARP okvir, što se signalizira aktivacijom `out_eop` na posljednjem bajtu.
+- **Idle** – Početno stanje u kojem modul miruje i ne učestvuje u mrežnoj komunikaciji. Svi izlazni kontrolni signali su neaktivni (`busy = '0'`, `done = '0'`), a interni brojač vremena je resetovan. Proces prevođenja adrese započinje impulsom na signalu `resolve`, nakon čega automat prelazi u stanje slanja zahtjeva.
+- **Send ARP Request** – U ovom stanju modul generiše i šalje ARP Request poruku u obliku toka bajtova (*engl. byte-stream*). Prijenos podataka realizovan je putem **Avalon-ST** interfejsa, gdje se bajtovi pojavljuju na magistrali `out_data` samo kada su signali `out_valid` i `out_ready` istovremeno aktivni. Automat ostaje u ovom stanju sve dok se ne pošalje kompletan ARP okvir, što se signalizira aktivacijom `out_eop` na posljednjem bajtu.
 - **Wait_Reply** – Nakon slanja zahtjeva, modul prelazi u stanje čekanja odgovora. U ovom stanju aktivan je interni brojač `cnt_timer`, koji implementira *timeout* mehanizam. Postoje dva moguća ishoda:
     - **Detekcija dolaznog paketa** – Ukoliko se detektuje početak novog paketa (`in_valid = '1'` i `in_sop = '1'`), automat prelazi u stanje provjere sadržaja.
-    - **Istek vremena (timeout)** – Ako brojač dostigne vrijednost `MAX_TIMEOUT`, automat prelazi direktno u stanje **Done**, čime se sprječava trajno blokiranje modula u slučaju izostanka ARP odgovora.
+    - **Istek vremena (timeout)** – Ako brojač dostigne vrijednost `MAX_TIMEOUT`, automat prelazi direktno u stanje **Done**, čime se spriječava trajno blokiranje modula u slučaju izostanka ARP odgovora.
 - **Check Frame** – U ovom stanju se tokom prijema okvira sekvencijalno analiziraju relevantna ARP polja. Provjerava se tip operacije (`OPER == 2`, što označava ARP Reply) kao i izvorna IP adresa (`SPA == ip_address`). Ukoliko su svi uslovi ispunjeni, fizička adresa pošiljaoca (`SHA`) se pohranjuje u privremeni registar. U suprotnom, paket se smatra nevažećim.
 - **Drop Frame** – Ako se tokom provjere utvrdi da prispjeli paket nije validan ARP Reply ili nije namijenjen ovom uređaju, automat prelazi u stanje odbacivanja. Modul nastavlja prihvatati dolazne bajtove sve do detekcije signala `in_eop`, čime se neispravan okvir u potpunosti uklanja iz komunikacijskog toka, nakon čega se automat vraća u stanje **Wait_Reply**.
-- **Done** – Završno stanje u kojem se generiše izlazni impuls `done = '1'` u trajanju od jednog takta, čime se nadređenom sistemu signalizira završetak procesa rezolucije. Izlaz `mac_address` se ažurira samo u slučaju uspješne rezolucije (`Frame_OK = '1'`). Nakon toga, automat se automatski vraća u početno stanje **Idle**, spreman za novi zahtjev.
+- **Done** – Završno stanje u kojem se generiše izlazni impuls `done = '1'` u trajanju od jednog takta, čime se nadređenom sistemu signalizira završetak procesa prevođenja. Izlaz `mac_address` se ažurira samo u slučaju uspješnog ishoda (`Frame_OK = '1'`). Nakon toga, automat se automatski vraća u početno stanje **Idle**, spreman za novi zahtjev.
 
 ### Tok protokola i kontrolna logika
 
-FSM dizajn osigurava potpunu usklađenost sa ARP standardom i Avalon-ST specifikacijom interfejsa. Uvođenje stanja **Drop Frame** značajno povećava robusnost sistema, jer omogućava ignorisanje irelevantnog ili *broadcast* saobraćaja bez prekidanja procesa rezolucije. 
+Uvođenje stanja **Drop Frame** značajno povećava robusnost sistema, jer omogućava ignorisanje irelevantnog ili *broadcast* saobraćaja bez prekidanja procesa. 
 
-Sinhronizacija između stanja ostvarena je isključivo pomoću signala `clock`, dok asinhroni signal `reset` omogućava trenutačni povratak automata u bezbjedno početno stanje. Kontrola toka podataka (*engl. backpressure*) realizovana je signalima `in_ready` i `out_ready`, čime se garantuje da neće doći do gubitka podataka u situacijama kada prijemnik ili predajnik privremeno nisu spremni za rad.
-
+Sinhronizacija između stanja ostvarena je isključivo pomoću signala `clock`, dok asinhroni signal `reset` omogućava trenutni povratak automata u bezbjedno početno stanje. Kontrola toka podataka (*engl. backpressure*) realizovana je signalima `in_ready` i `out_ready`, čime se garantuje da neće doći do gubitka podataka u situacijama kada prijemnik ili predajnik privremeno nisu spremni za rad.
 
 
 ## Modeliranje sklopa u VHDL-u i sinteza u Intel Quartus Prime
