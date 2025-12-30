@@ -108,7 +108,7 @@ Za opis signala korišteni su opisi Avalon-ST interface-a [5].
 
 ### Scenario 1 - uspješna rezolucija
 
-U ovom scenariju dijagram valnih oblika prikazuje preciznu dinamiku signala tokom procesa razrješavanja IP adrese u MAC adresu. Na početku, aktivacija signala reset dovodi sistem u početno stanje, a njegovo isključivanje omogućava da logika modula postane spremna za rad. U tom trenutku, ulazni signal `ip_address` dobija vrijednost 192.168.1.10. Ta vrijednost se pohranjuje u unutrašnju logiku modula i postaje referentna osnova za generisanje ARP Request okvira.
+U ovom scenariju dijagram valnih oblika prikazuje preciznu dinamiku signala tokom procesa razrješavanja IP adrese u MAC adresu. Na početku, aktivacija signala reset dovodi sistem u početno stanje, a njegovo isključivanje omogućava da logika modula postane spremna za rad. U tom trenutku, ulazni signal `ip_address` dobija vrijednost 192.168.1.10, te signal `resolve` dobija vrijednost 1 i drži je sve dok traje slanje upita i čekanje odgovora. Ta vrijednost se pohranjuje u unutrašnju logiku modula i postaje referentna osnova za generisanje ARP Request okvira.
 
 Nakon inicijalizacije, modul započinje formiranje izlaznog okvira. Signal `out_valid` označava da su podaci na magistrali `out_data` ispravni i spremni za prijenos. Istovremeno, signal `out_ready` potvrđuje da prijemna strana može prihvatiti podatke. Tek kada su oba signala aktivna, bajtovi okvira se sukcesivno prenose, što se jasno vidi kroz niz vrijednosti na `out_data`. Ova koordinacija između validacije i spremnosti osigurava da se prijenos odvija bez gubitaka i u strogo definisanom ritmu takta.
 
@@ -117,7 +117,7 @@ Tokom prijenosa, `out_data` nosi cjelokupnu strukturu ARP Requesta: od Ethernet 
 Nakon što je zahtjev poslan, sistem prelazi u stanje čekanja. U tom periodu, signal `in_valid` označava da je na ulazu prisutan okvir, dok `in_ready` potvrđuje da modul može prihvatiti podatke. Tokom ove faze, bajtovi ARP Replya se sukcesivno pojavljuju na `in_data`, a modul ih interpretira u skladu sa očekivanim formatom. Kada se potvrdi da je odgovor validan, izlazni signal `mac_address` dobija vrijednost fizičke adrese ciljnog uređaja. Time se proces rezolucije završava, a IP adresa 192.168.1.10 se uspješno povezuje sa odgovarajućom MAC adresom. Grafički prikaz opisanog scenarija predstavljen je na slici 5:
 
 <div align="center">
-  <img src="Wavedrom/wavedrom_s1.png" alt="Scenario1" title="Scenario1">
+  <img src="Wavedrom/wavedrom1.png" alt="Scenario1" title="Scenario1">
   <p><b>Slika 5:</b> Wavedrom za uspješnu rezoluciju </p>
 </div>
 
@@ -126,12 +126,12 @@ Nakon što je zahtjev poslan, sistem prelazi u stanje čekanja. U tom periodu, s
 
 Dijagram valnih oblika, u ovom primjeru, pokazuje kako sistem inicira razrješavanje IP adrese, ali ne dobija povratni ARP odgovor od ciljnog uređaja. Početna sekvenca ostaje nepromijenjena: aktivacijom signala `reset` sistem se inicijalizuje, a nakon njegovog deaktiviranja modul postaje spreman za rad. Ulazni signal `ip_address` dobija vrijednost 192.168.1.10, čime se pokreće generisanje ARP Request okvira. Slanje okvira odvija se kroz sinhronizovanu aktivaciju signala `out_valid` i `out_ready`, dok se niz bajtova prenosi preko `out_data`. Vrijednosti koje se pojavljuju predstavljaju kompletan ARP Request, uključujući Ethernet zaglavlje, ARP polja i tehničke dodatke. Tok prijenosa je precizno usklađen sa signalom `clock`.
 
-Međutim, za razliku od prethodnog scenarija, nakon slanja okvira ne dolazi do prijema odgovora. Signal `in_valid` ostaje neaktivan, što znači da na ulazu nije detektovan nijedan dolazni okvir. Iako `in_ready` može biti aktivan, bez dolaznih podataka njegova funkcija ostaje neiskorištena. Signal `mac_address` ne pokazuje promjene, što potvrđuje da rezolucija nije uspjela.
+Nakon uspješnog slanja ARP Request okvira, modul prelazi u stanje čekanja na odgovor, što se vidi po tome što signal `busy` ostaje aktivan (1) do kraja prikazanog perioda. U ovom scenariju, međutim, ciljni uređaj ne šalje ARP Reply. Iako se na ulaznim signalima (in_data, in_valid, in_sop, in_eop) pojavljuje okvir koji izgleda kao potencijalni ARP paket (počinje MAC-om Resolvera kao destinacijom, sadrži EtherType 0x0806 i slične vrijednosti), ključno je da je ARP operacijski kod (OPER) postavljen na 0x0003 – što nije standardna vrijednost ni za Request (0x0001) ni za Reply (0x0002). Ova neispravna vrijednost onemogućava modul da prepozna okvir kao validan ARP Reply.
 
-Ovakvo ponašanje sistema ilustrira situaciju u kojoj ciljni uređaj nije dostupan na mreži, ne podržava ARP, ili je došlo do greške u komunikaciji. Modul ostaje u stanju pasivnog čekanja, bez eskalacije greške, što omogućava eventualnu ponovnu inicijaciju ili timeout mehanizam, zavisno od implementacije. Na slici 6 prikazan je primjer kada u polju OPER nije vrijednost 2 (što bi predstavljalo da je poslan ARP Reply), nego neka druga vrijednost (konkretno u ovom slučaju 3): 
+Zbog toga modul ne izvlači MAC adresu, signal `mac_address` ostaje nepromijenjen (prikazan kao stalna vrijednost, ali bez validnog rezultata), a signal `done` nikada ne generiše pozitivan pulse – ostaje na 0 do kraja simulacije. Ovaj scenario predstavlja tipičan slučaj neuspješne ARP rezolucije, gdje ciljni uređaj ili ne odgovara ili šalje neispravan/neprepoznatljiv paket, te modul ne može uspješno razriješiti traženu IP adresu, prikazano na slici 6:
 
 <div align="center">
-  <img src="Wavedrom/wavedrom_s2.png" alt="Scenario2" title="Scenario2">
+  <img src="Wavedrom/wavedrom2.png" alt="Scenario2" title="Scenario2">
   <p><b>Slika 6:</b> Wavedrom za neuspješnu rezoluciju </p>
 </div>
 
