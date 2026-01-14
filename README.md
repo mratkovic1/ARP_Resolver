@@ -153,7 +153,7 @@ Konačni automat (*engl. Finite State Machine – FSM*) je matematički model ko
 Modul ARP_Resolver strukturiran je kao deterministički FSM koji upravlja procesom razmjene ARP okvira u mrežnom podsistemu. FSM je organizovan kroz jasno definisana stanja i prijelaze, čime se modelira cjelokupan tok obrade: od inicijalnog mirovanja, preko slanja zahtjeva, čekanja odgovora i prijema okvira, pa sve do završetka ili odbacivanja (ignorisanja) nevalidnih podataka. Na priloženom dijagramu na slici 7 prikazana su sva relevantna stanja (IDLE, ARP_REQUEST, WAITING_FOR_REPLY, RECEVING_REPLY, DONE i IGNORE) i prijelazi koji određuju dinamiku rada modula. Ovakva organizacija omogućava da se svaki ARP zahtjev i odgovor obradi u kontrolisanom slijedu, uz jasnu separaciju faza i predvidiv povratak sistema u početno stanje nakon završetka procesa.
 
 <div align="center">
-  <img src="FSM/fsm.png" alt="FSM dijagram" title="FSM dijagram ARP Resolvera">
+  <img src="FSM/fsm1.png" alt="FSM dijagram" title="FSM dijagram ARP Resolvera">
   <p><b>Slika 7:</b> FSM dijagram stanja ARP Resolvera</p>
 </div>
 
