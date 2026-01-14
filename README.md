@@ -41,7 +41,7 @@ ARP koristi vrlo jednostavnu strukturu poruke koja može da sadrži zahtjev ili 
 - **Target Hardware Address (THA)**: MAC adresa namijenjenog primaoca. U ARP zahtjevu ovo polje se zanemaruje. U ARP odgovoru ovo polje označava adresu uređaja koji je inicirao ARP zahtjev. Dužina polja je 48 bita. 
 - **Target Protocol Address (TPA)**: IP adresa namijenjenog primaoca. Dužina polja je 32 bita [4].
 
-### Scenarij 1 – Uspješna rezolucija adrese
+### Scenarij 1 – Uspješna rezolucija 
 
 U lokalnim Ethernet mrežama, kada jedan uređaj želi poslati IP paket drugom uređaju, neophodno je da poznaje njegovu MAC adresu. Ukoliko ta informacija nije dostupna u lokalnoj ARP tabeli, pokreće se proces dinamičke rezolucije adrese putem ARP protokola. Prikazani scenario ilustrira upravo taj tok komunikacije između dva uređaja – ARP Resolvera i ARP Respondera – u kojem se uspješno ostvaruje povezivanje IP adrese sa odgovarajućom MAC adresom.
 
@@ -63,7 +63,7 @@ Ovaj scenario, koji je prikazan na slici 3, predstavlja idealan tok ARP razmjene
 </div>
 
 
-### Scenarij 2 – Odbacivanje paketa
+### Scenarij 2 – Neuspješna rezolucija
 
 U ovom scenariju prikazana je situacija u kojoj ARP komunikacija ne rezultira uspješnom rezolucijom adrese, iako je formalno posmatrano razmjena poruka izvršena. Proces započinje identično kao u prethodnom slučaju: ARP Resolver šalje ARP Request poruku u kojoj traži MAC adresu uređaja čija je IP adresa poznata. Ethernet okvir se formira sa broadcast odredišnom adresom (FF:FF:FF:FF:FF:FF), dok se u ARP dijelu poruke navode standardizovana polja – tipovi protokola, dužine adresa, operacija (OPER = 1), te adrese pošiljaoca i cilja. Polje THA ostaje prazno, jer MAC adresa cilja još nije poznata.
 
@@ -106,31 +106,41 @@ Signali koji se koriste tokom izrade zadanog modula, predstavljeni su u nastavku
 Za opis signala korišteni su opisi Avalon-ST interface-a [5].
 
 
-### Scenario 1 - uspješna rezolucija
+### Scenario 1 - Uspješna rezolucija
 
-U ovom scenariju dijagram valnih oblika prikazuje preciznu dinamiku signala tokom procesa razrješavanja IP adrese u MAC adresu. Na početku, aktivacija signala reset dovodi sistem u početno stanje, a njegovo isključivanje omogućava da logika modula postane spremna za rad. U tom trenutku, ulazni signal `ip_address` dobija vrijednost 192.168.1.10, te signal `resolve` dobija vrijednost 1 i drži je sve dok traje slanje upita i čekanje odgovora. Nakon inicijalizacije, modul započinje formiranje izlaznog okvira. Signal `out_valid` označava da su podaci na `out_data` ispravni i spremni za prijenos. Istovremeno, signal `out_ready` potvrđuje da prijemna strana može prihvatiti podatke. Tek kada su oba signala aktivna, bajtovi okvira se sukcesivno prenose, što se jasno vidi kroz niz vrijednosti na `out_data`.
+Prikazani dijagram signala ilustrira scenarij uspješne ARP rezolucije, odnosno proces slanja ARP zahtjeva i prijema odgovora u lokalnoj mreži. Cilj ovog scenarija je da se za zadatu IP adresu dobije odgovarajuća fizička adresa, čime se omogućava ispravno adresiranje Ethernet okvira i daljnja IP komunikacija. Dijagram prikazuje vremensku zavisnost ključnih kontrolnih i podatkovnih signala, te jasno demonstrira kako se kompletna ARP razmjena odvija od inicijalizacije do uspješnog završetka.
 
-Tokom prijenosa, `out_data` nosi cjelokupnu strukturu ARP Requesta: od Ethernet zaglavlja, preko ARP polja, pa sve do tehničkih dodataka poput paddinga i CRC‑a. Svaka grupa bajtova ima svoju funkciju, a njihovo pojavljivanje u vremenu sinhronizovano je sa signalom `clock`, čime se potvrđuje deterministički karakter procesa.
+Proces započinje aktiviranjem signala `resolve`, čime se inicira ARP procedura za IP adresu koja je prisutna na ulazu `ip_address`. U ovom trenutku modul ulazi u fazu obrade zahtjeva, što se vidi kroz aktivaciju signala `busy`, koji ostaje postavljen tokom cijelog trajanja ARP razmjene. Na izlazu `out_valid` pojavljuje se validan podatkovni tok, dok se kroz `out_data` sekvencijalno šalju bajtovi ARP Request poruke. U početnim bajtovima jasno se prepoznaje odredišna MAC adresa postavljena na broadcast vrijednost (FF:FF:FF:FF:FF:FF), čime se osigurava da svi uređaji u lokalnoj mreži prime upit. Nakon toga slijede polja koja definiraju Ethernet tip, ARP zaglavlje, te informacije o pošiljaocu, uključujući njegovu MAC i IP adresu, kao i ciljnu IP adresu za koju se traži fizička adresa.
 
-Nakon toga, signal `in_valid` označava da je na ulazu prisutan okvir, dok `in_ready` potvrđuje da modul može prihvatiti podatke. Tokom ove faze, bajtovi ARP Replya se sukcesivno pojavljuju na `in_data`, a modul ih interpretira u skladu sa očekivanim formatom. Kada se potvrdi da je odgovor validan, izlazni signal `mac_address` dobija vrijednost fizičke adrese ciljnog uređaja. Time se proces rezolucije završava, a IP adresa 192.168.1.10 se uspješno povezuje sa odgovarajućom MAC adresom. Grafički prikaz opisanog scenarija predstavljen je na slici 5:
+Tokom slanja ARP zahtjeva, signal `out_ready` potvrđuje da je komunikacijski interfejs spreman za prihvat svakog bajta, dok se `byte_counter` inkrementira i prati redoslijed slanja kompletne ARP poruke. Po završetku slanja posljednjeg bajta zahtjeva, izlazni podaci se zaustavljaju, a modul prelazi u fazu čekanja odgovora, što se na dijagramu vidi kao period bez aktivnog `out_valid` signala, dok `busy` ostaje aktivan.
+
+Nakon određenog vremenskog intervala, na ulazu `in_data` pojavljuje se dolazni podatkovni tok, praćen aktivacijom signala `in_valid`, što označava prijem ARP Reply poruke. Bajtovi odgovora dolaze redom i sadrže MAC adresu uređaja koji posjeduje traženu IP adresu. U okviru ovog toka, polja ARP zaglavlja potvrđuju da se radi o odgovoru, dok dio poruke koji nosi adresne informacije sada sadrži traženu fizičku adresu. Tokom prijema, `in_ready` signalizira da je modul spreman da prihvati dolazne podatke, dok se `byte_counter` ponovo koristi za praćenje redoslijeda prijema.
+
+Po uspješnom prijemu kompletnog ARP odgovora, izdvojena MAC adresa se pojavljuje na izlazu `mac_address`, čime je proces rezolucije završen. Istovremeno se aktivira signal `done`, koji označava kraj ARP procedure, dok se `busy` deaktivira, potvrđujući da je modul slobodan za novu operaciju. Izostanak aktivacije internog signala `error` tokom cijelog procesa dodatno potvrđuje da je ARP razmjena uspješno realizirana bez grešaka.
+
+Na ovaj način dijagram jasno prikazuje kompletan tok ARP komunikacije, od iniciranja zahtjeva, preko emitovanja ARP Request poruke, do prijema i obrade ARP Reply odgovora, čime se demonstrira ispravna i uspješna rezolucija IP adrese u MAC adresu unutar lokalne mreže. Grafički prikaz opisanog scenarija predstavljen je na slici 5:
 
 <div align="center">
-  <img src="Wavedrom/wavedrom_s1.png" alt="Scenario1" title="Scenario1">
-  <p><b>Slika 5:</b> Wavedrom za uspješnu rezoluciju </p>
+  <img src="Wavedrom/wavedrom1.png" alt="Scenario1" title="Scenario1">
+  <p><b>Slika 5:</b> Waveform za uspješnu rezoluciju </p>
 </div>
+
+
 
 
 ### Scenario 2 - Neuspješna rezolucija 
 
-Dijagram valnih oblika, u ovom primjeru, pokazuje kako sistem inicira razrješavanje IP adrese, ali ne dobija povratni ARP odgovor od ciljnog uređaja. Početna sekvenca ostaje nepromijenjena: aktivacijom signala `reset` sistem se inicijalizuje, a nakon njegovog deaktiviranja modul postaje spreman za rad. Ulazni signal `ip_address` dobija vrijednost 192.168.1.10, čime se pokreće generisanje ARP Request okvira. Slanje okvira odvija se kroz sinhronizovanu aktivaciju signala `out_valid` i `out_ready`, dok se niz bajtova prenosi preko `out_data`. Vrijednosti koje se pojavljuju predstavljaju kompletan ARP Request, uključujući Ethernet zaglavlje, ARP polja i tehničke dodatke. Tok prijenosa je precizno usklađen sa signalom `clock`.
+Drugi prikazani scenarij u osnovi slijedi isti početni tok kao i prethodno opisani slučaj. Postupak se također inicira aktiviranjem signala `resolve` za zadatu IP adresu, nakon čega se šalje ARP Request poruka u lokalnu mrežu, koristeći broadcast odredišnu MAC adresu. Tokom ove faze prisutni su identični mehanizmi kontrole prijenosa podataka, uključujući validaciju izlaznog toka i praćenje redoslijeda bajtova, dok modul ostaje zauzet i čeka odgovor iz mreže. Na ovaj način oba scenarija demonstriraju standardni početak ARP rezolucije i pravilno formiranje ARP upita.
 
-Nakon uspješnog slanja ARP Request okvira, modul prelazi u stanje čekanja na odgovor, što se vidi po tome što signal `busy` ostaje aktivan (1) do kraja prikazanog perioda. U ovom scenariju, međutim, ciljni uređaj ne šalje ARP Reply. Iako se na ulaznim signalima (in_data, in_valid, in_sop, in_eop) pojavljuje okvir koji izgleda kao potencijalni ARP paket (počinje MAC-om Resolvera kao destinacijom, sadrži EtherType 0x0806 i slične vrijednosti), ključno je da je ARP operacijski kod (OPER) postavljen na 0x0003 – što nije standardna vrijednost ni za Request (0x0001) ni za Reply (0x0002). Ova neispravna vrijednost onemogućava modul da prepozna okvir kao validan ARP Reply.
+Ključna razlika u odnosu na prvi scenarij nastupa nakon završetka slanja ARP zahtjeva i ulaska u fazu čekanja odgovora. Za razliku od prethodnog slučaja, u ovom scenariju dolazni ARP okvir koji se pojavljuje na ulazu ne predstavlja važeći odgovor na prethodno poslani zahtjev. Iako se na `in_data` i `in_valid` signalima pojavljuje strukturiran podatkovni tok koji na prvi pogled odgovara ARP poruci, njegov sadržaj ne zadovoljava kriterije potrebne za uspješnu rezoluciju tražene IP adrese. Kao posljedica toga, primljeni okvir se prepoznaje kao nerelevantan i biva zanemaren, bez izdvajanja MAC adrese i bez završetka postupka.
 
-Zbog toga modul ne izvlači MAC adresu, signal `mac_address` ostaje nepromijenjen (prikazan kao stalna vrijednost, ali bez validnog rezultata), a signal `done` nikada ne generiše pozitivan pulse – ostaje na 0 do kraja simulacije. Ovaj scenario predstavlja tipičan slučaj neuspješne ARP rezolucije, gdje ciljni uređaj ili ne odgovara ili šalje neispravan/neprepoznatljiv paket, te modul ne može uspješno razriješiti traženu IP adresu. Opisani scenarij prikazan je na slici 6:
+Tokom ovog procesa modul zadržava aktivan status zauzetosti, čime se jasno pokazuje da prijem neodgovarajuće ARP poruke ne dovodi do prekida ili pogrešnog završetka procedure. Umjesto toga, sistem ostaje spreman da i dalje čeka ispravan ARP Reply koji odgovara inicijalno poslanom upitu. Upravo ovakav pristup osigurava robusnost ARP implementacije u realnim mrežnim uslovima, gdje se u istom trenutku može pojaviti veći broj ARP poruka koje nisu nužno povezane s konkretnim zahtjevom.
+
+Implementacija ovog scenarija ima za cilj demonstrirati sposobnost sistema da razlikuje relevantne i nerelevantne ARP odgovore, te da pravilno ignoriše poruke koje ne doprinose traženoj rezoluciji. Time se izbjegava mogućnost pogrešnog mapiranja IP i MAC adresa, ali i potencijalni sigurnosni i funkcionalni problemi. U poređenju s prvim scenarijem, koji prikazuje idealan slučaj uspješne razmjene, ovaj scenarij naglašava ponašanje sistema u prisustvu „šuma“ u mreži i potvrđuje ispravnost implementacije u realističnim komunikacijskim okruženjima. Grafički prikaz opisanog scenarija predstavljen je na slici 6:
 
 <div align="center">
-  <img src="Wavedrom/wavedrom_s2.png" alt="Scenario2" title="Scenario2">
-  <p><b>Slika 6:</b> Wavedrom za neuspješnu rezoluciju </p>
+  <img src="Wavedrom/wavedrom2.png" alt="Scenario2" title="Scenario2">
+  <p><b>Slika 6:</b> Waveform za neuspješnu rezoluciju </p>
 </div>
 
 
@@ -148,17 +158,18 @@ Modul ARP_Resolver strukturiran je kao deterministički FSM koji upravlja proces
 </div>
 
 
-**IDLE** predstavlja početnu i završnu tačku rada automata, u kojoj modul miruje i ne obrađuje okvire. FSM ostaje u ovom stanju sve dok ne primi zahtjev za rješavanje ARP upita, što se signalizira aktivacijom ulaznog signala `resolve`. Istovremeno, modul provjerava spremnost interface-a putem ulaznog signala `out_ready`. Tek kada su oba uslova ispunjena, automata napušta stanje mirovanja i prelazi u fazu slanja zahtjeva (SENDING REQUEST). 
+**IDLE** – Ovo stanje predstavlja početno stanje automata. U ovom stanju sistem ne vrši nikakvu aktivnu obradu podataka i spreman je da započne novu ARP rezoluciju. Automat ostaje u ovom stanju sve dok ne dođe do aktivacije signala `resolve`, čime se inicira postupak ARP rezolucije. Aktiviranjem ovog signala automat napušta stanje IDLE i prelazi u stanje ARP_REQUEST, u kojem započinje formiranje i slanje ARP upita.
 
-**SENDING REQUEST** označava fazu u kojoj modul aktivno generiše i šalje ARP zahtjev prema mrežnom interface-u Dok se nalazi u ovom stanju, modul kontinuirano šalje okvir sve dok zahtjev ostaje aktivan (`resolve = 1`). Kada se završi slanje i interfejs više nije spreman (`out_ready = 0`), FSM napušta ovo stanje i prelazi u WAITING FOR REPLY. Na taj način, SENDING REQUEST obuhvata cijelu fazu formiranja ARP zahtjeva, osiguravajući da se okvir u potpunosti prenese prije nego što sistem pređe u narednu fazu čekanja odgovora.
+**ARP_REQUEST** – U stanju ARP_REQUEST automat formira i šalje ARP Request poruku. Tokom boravka u ovom stanju, bajtovi Ethernet zaglavlja i ARP paketa se sekvencijalno pakuju i prosljeđuju prema ARP Responderu. Ukupan broj poslanih bajtova iznosi 42, što uključuje kompletno Ethernet zaglavlje i ARP poruku. Automat ostaje u ovom stanju sve dok se ne pošalje posljednji bajt ARP zahtjeva, nakon čega prelazi u stanje čekanja odgovora.
 
-**WAITING FOR REPLY** označava fazu u kojoj modul, nakon što je poslao ARP zahtjev, prelazi u pasivno čekanje odgovora.  Prelaz u naredno stanje nastaje tek kada se pojavi početak dolaznog okvira, što se signalizira kombinacijom `in_sop = 1` i `in_valid = 1`. Na taj način FSM osigurava da prijem ne započne prerano, već isključivo kada okvir zaista stigne. 
+**WAITING_FOR_REPLY** – Stanje WAITING_FOR_REPLY označava fazu u kojoj automat pasivno čeka dolazni ARP odgovor iz mreže. Tokom ovog perioda ne vrši se aktivna obrada podataka, već se nadgleda dolazni interface. Automat ostaje u ovom stanju sve dok ne budu istovremeno aktivni signali `in_sop = 1` i `in_valid = 1`, čime se detektuje početak dolaznog ARP okvira i započinje proces prijema odgovora.
 
-**RECEIVING REPLY** predstavlja fazu u kojoj modul aktivno prihvata dolazni ARP odgovor. Dok okvir traje, FSM ostaje u ovom stanju sve dok se ne detektuje kraj (`in_eop = 0` uz `in_valid = 1`), čime se osigurava da se svi podaci uredno prime. Kada se pojavi završetak okvira (`in_eop = 1`), sistem provjerava da li je obrada uspješno završena. Ako je izlazni signal `done = 1`, prelazi se u završno stanje DONE, dok u slučaju `done = 0` automata ide u DISCARDING FRAME.
+**RECEIVING_REPLY** – U stanju RECEIVING_REPLY automat aktivno prima i analizira dolaznu ARP Reply poruku. Tokom prijema bajtova provjerava se ispravnost sadržaja paketa i relevantnost odgovora u odnosu na prethodno poslani zahtjev. Automat ostaje u ovom stanju sve dok se ne ispuni jedan od dva uslova: ukoliko interni signal `error` postane aktivan, što ukazuje na neispravan ili nerelevantan paket, automat prelazi u stanje IGNORE; u slučaju da se detektuje uspješan završetak prijema, označen pojavom `in_sop = 1`, automat prelazi u stanje DONE, čime se potvrđuje uspješna ARP rezolucija.
 
-**DISCARDING FRAME** predstavlja fazu u kojoj modul kontrolisano odbacuje okvir koji je primljen, ali nije validan ili nije uspješno obrađen. Tokom ove faze okvir se zanemaruje, bez daljnje obrade ili upisa rezultata. FSM ostaje u stanju odbacivanja sve dok se modul ne oslobodi zauzetosti, što se signalizira kroz `busy = 0`. Nakon toga sistem se vraća u početno stanje IDLE, spreman da prihvati novi zahtjev. 
+**DONE** – Stanje DONE signalizira da je postupak ARP rezolucije uspješno završen i da je tražena MAC adresa pronađena. U ovom stanju rezultat rezolucije postaje dostupan na izlazu, dok se aktivira signal koji označava završetak procesa. Automat ostaje u ovom stanju sve dok signal `done` ne postane neaktivan, nakon čega se vraća u stanje IDLE, spreman za novu operaciju.
 
-**DONE** označava fazu rada automata u kojoj se potvrđuje da je prijem i obrada ARP odgovora uspješno završena. U ovom trenutku modul signalizira završetak obrade kroz izlazni signal done, čime se jasno označava da je rezultat spreman za daljnju upotrebu. FSM ostaje u stanju DONE dok se modul ne oslobodi zauzetosti, što se reflektuje kroz ulazni uslov `busy = 0`. Nakon toga sistem se vraća u početno stanje IDLE, spreman da prihvati novi zahtjev.
+**IGNORE** – Stanje IGNORE služi za obradu situacija u kojima primljeni paketi ne predstavljaju važeći ARP odgovor na poslani zahtjev. U ovom stanju automat ignoriše dolazne bajtove sve dok traje prijem trenutnog okvira, bez pokušaja obrade ili izdvajanja adresnih informacija. Nakon završetka prijema neispravnog paketa, sistem se vraća u stanje IDLE, čime se omogućava pokretanje nove ARP rezolucije.
+
 
 
 
