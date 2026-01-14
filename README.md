@@ -87,17 +87,17 @@ Signali koji se koriste tokom izrade zadanog modula, predstavljeni su u nastavku
 |-----------|---------------------|--------------|-----------------------------------------------------------------------------|
 | IN        | STD_LOGIC           | clock        | Clock signal koji pokreće sekvencijalnu logiku.                              |
 | IN        | STD_LOGIC           | reset        | Asinhroni reset, vraća modul u početno stanje.                              |
-| IN        | STD_LOGIC           | resolve      | Impuls kojim se inicira ARP rezolucija za zadati `ip_address`. Aktivan kada Resolver šalje ARP zahtjev i čeka ARP odgovor. |
+| IN        | STD_LOGIC           | resolve      | Impuls kojim se inicira ARP rezolucija za zadati `ip_address`. |
 | IN        | STD_LOGIC_VECTOR(31 downto 0) | ip_address   | IP adresa za koju se traži MAC adresa.                                      |
-| OUT       | STD_LOGIC           | done         | Impuls (1 takt) označava da je rezolucija završena i da je `mac_address` validan. |
-| OUT       | STD_LOGIC_VECTOR(47 downto 0) | mac_address  | Rezultat rezolucije – MAC adresa dobijena iz ARP reply paketa.              |
-| OUT       | STD_LOGIC           | busy         | Pokazuje da je rezolucija u toku; postaje aktivan (1) nakon `out_sop=1`, a vraća se na 0 nakon `done=1` (za uspješnu rezoluciju) ili nakon `done=0 & in_eop=1` (za neuspješnu rezoluciju). |
-| IN        | STD_LOGIC_VECTOR(7 downto 0)  | in_data      | Bajt‑stream ARP reply paketa (Ethernet + ARP polja).                        |
+| OUT       | STD_LOGIC           | done         | Impuls označava da je rezolucija završena i da je `mac_address` validan. |
+| OUT       | STD_LOGIC_VECTOR(47 downto 0) | mac_address  | Rezultat rezolucije – MAC adresa dobijena iz ARP Reply paketa.              |
+| OUT       | STD_LOGIC           | busy         | Pokazuje da je rezolucija u toku; postaje aktivan (1) nakon `out_sop=1`, a vraća se na 0 nakon `in_eop=1`. |
+| IN        | STD_LOGIC_VECTOR(7 downto 0)  | in_data      | Ulazni bajtovi ARP Reply paketa (Ethernet + ARP polja).                        |
 | IN        | STD_LOGIC           | in_valid     | Označava da je bajt na `in_data` važeći.                                    |
-| IN        | STD_LOGIC           | in_sop       | Start of packet – aktivan na prvom bajtu ARP reply paketa.                  |
-| IN        | STD_LOGIC           | in_eop       | End of packet – aktivan na zadnjem bajtu ARP reply paketa.                  |
+| IN        | STD_LOGIC           | in_sop       | Start of packet – aktivan na prvom bajtu ARP Reply paketa.                  |
+| IN        | STD_LOGIC           | in_eop       | End of packet – aktivan na zadnjem bajtu ARP Reply paketa.                  |
 | OUT       | STD_LOGIC           | in_ready     | Izlaz iz modula koji pokazuje da li je modul spreman da primi sljedeći bajt.     |
-| OUT       | STD_LOGIC_VECTOR(7 downto 0)  | out_data     | Bajt‑stream ARP request paketa (sva polja).                      |
+| OUT       | STD_LOGIC_VECTOR(7 downto 0)  | out_data     | Bajtovi ARP request paketa koji se šalju prema mrežnom sloju.                      |
 | OUT       | STD_LOGIC           | out_valid    | Označava da je bajt na `out_data` važeći.                                   |
 | OUT       | STD_LOGIC           | out_sop      | Start of packet – aktivan na prvom bajtu ARP request paketa.                |
 | OUT       | STD_LOGIC           | out_eop      | End of packet – aktivan na zadnjem bajtu ARP request paketa.                |
@@ -153,7 +153,7 @@ Konačni automat (*engl. Finite State Machine – FSM*) je matematički model ko
 Modul ARP_Resolver strukturiran je kao deterministički FSM koji upravlja procesom razmjene ARP okvira u mrežnom podsistemu. FSM je organizovan kroz jasno definisana stanja i prijelaze, čime se modelira cjelokupan tok obrade: od inicijalnog mirovanja, preko slanja zahtjeva, čekanja odgovora i prijema okvira, pa sve do završetka ili odbacivanja (ignorisanja) nevalidnih podataka. Na priloženom dijagramu na slici 7 prikazana su sva relevantna stanja (IDLE, ARP_REQUEST, WAITING_FOR_REPLY, RECEVING_REPLY, DONE i IGNORE) i prijelazi koji određuju dinamiku rada modula. Ovakva organizacija omogućava da se svaki ARP zahtjev i odgovor obradi u kontrolisanom slijedu, uz jasnu separaciju faza i predvidiv povratak sistema u početno stanje nakon završetka procesa.
 
 <div align="center">
-  <img src="FSM/fsm1.png" alt="FSM dijagram" title="FSM dijagram ARP Resolvera">
+  <img src="FSM/fsm.png" alt="FSM dijagram" title="FSM dijagram ARP Resolvera">
   <p><b>Slika 7:</b> FSM dijagram stanja ARP Resolvera</p>
 </div>
 
